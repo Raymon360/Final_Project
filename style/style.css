@@ -1,0 +1,11 @@
+nav {
+	background-color: #00172B;
+}
+
+button[type-submit]:hover {
+	background-color: #45a049;
+}
+
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
