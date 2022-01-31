@@ -4,7 +4,6 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 import requests
-import time
 from wsgiref.util import request_uri
 from streamlit_lottie import st_lottie
 from unittest import result
@@ -31,13 +30,15 @@ def explore(df):
             st.subheader('Dataset')
             st.write(df)
 
-            # Pilih Kolom yang ingin di Prediksi
-            option = st.sidebar.selectbox(
-            'How would you like to be contacted?',
-            (df.columns.values))
-            submit = st.sidebar.button("View Data", option)
-            if submit:
-            
+            with st.expander("Visuaisasi Dataset"):
+                # Pilih Kolom yang ingin di Prediksi
+                
+                option = st.sidebar.selectbox(
+                'Choose columns',
+                (df.columns.values))
+                # submit = st.sidebar.button("View Data", option)
+                # if submit:
+                
                 rolling_window = 52
                 f, ax = plt.subplots(figsize=(15, 5))
 
@@ -69,9 +70,9 @@ def explore(df):
             
                 st.subheader('Augmented Dickeyy-fuller (ADF) :')
                 st.write("""
-                1. Jika p_value dibawah 0.05, linechart berwarna hijau
-                2. Jika p_value dibawah ---, linechart berwarna jingga
-                3. Jika p_value dibawah ---, linechart berwarna merah
+                1. Jika p_value dibawah 0.05, dan adf dibawah critical value 1%, linechart berwarna hijau
+                2. Jika p_value dibawah 0.05, dan adf dibawah critical value 5%, linechart berwarna jingga
+                3. Jika p_value dibawah 0.05, dan adf dibawah critical value 10%, linechart berwarna merah
                 """)
                 st.write(f)
 
@@ -88,49 +89,50 @@ def explore(df):
 
 
             # FORCASTING
-            period_input = st.sidebar.number_input('Berapa hari perkiraan? (min 5 hari)',min_value=0, value=5 )
-            submit_ = st.sidebar.button("Forecasting", period_input)
-            if submit_:
+            form = st.sidebar.form(key='my-form')
+            period_input = form.number_input('Enter day to predict', max_value=1825)
+            submit = form.form_submit_button('Submit')
+            if submit:
                 with st.spinner("Loading...."):
 
                     # Mengubah dtype datetime menjadi index
                     df.set_index(i, inplace=True)
                     ts = df[option]
 
-                    
-                    # Training Data
-                    st.subheader("Training Data")
-                    train_size = 0.7
-                    split_idx = round(len(ts)* train_size)
-                    split_idx
+                    with st.expander("Modelling"):
+                        # Training Data
+                        st.subheader("Training Data")
+                        train_size = 0.7
+                        split_idx = round(len(ts)* train_size)
+                        split_idx
 
-                    # Split
-                    train = ts.iloc[:split_idx]
-                    test = ts.iloc[split_idx:]
+                        # Split
+                        train = ts.iloc[:split_idx]
+                        test = ts.iloc[split_idx:]
 
-                    do,ax= plt.subplots(figsize=(12,4))
-                    ax.plot(train, label='Train')
-                    ax.plot(test, label='Test')
-                    ax.legend(bbox_to_anchor=[1,1])
-                    st.write(do)
+                        do,ax= plt.subplots(figsize=(12,4))
+                        ax.plot(train, label='Train')
+                        ax.plot(test, label='Test')
+                        ax.legend(bbox_to_anchor=[1,1])
+                        st.write(do)
 
-                    # Modelling
-                    auto_model = pm.auto_arima(train, start_p=0, start_q=0)
-                    st.write('Best p,d,q order: {} x {}'.format(auto_model.order, auto_model.seasonal_order))
+                        # Modelling
+                        auto_model = pm.auto_arima(train, start_p=0, start_q=0)
+                        st.write('Best p,d,q order: {} x {}'.format(auto_model.order, auto_model.seasonal_order))
 
-                    pred_model = auto_model.predict(n_periods=len(test), typ='levels')
-                    score_mae = mean_absolute_error(test, pred_model)
-                    score_rmse = sqrt(mean_squared_error(pred_model, test))
-                    sarimax_prediksi = SARIMAX(ts, order=auto_model.order, seasonal_order=auto_model.seasonal_order, trend='t')
-                    results_SARIMA_t = sarimax_prediksi.fit(disp=-1)
-                    predictions_SARIMA_diff_t = pd.Series(results_SARIMA_t.fittedvalues,copy=True)
-                    st.subheader("Modelling")
-                    di = plt.figure(figsize=(10,5))
-                    plt.plot(ts)             
-                    plt.plot(predictions_SARIMA_diff_t, color='red')               #fitting dengan data
-                    st.pyplot(di)
+                        pred_model = auto_model.predict(n_periods=len(test), typ='levels')
+                        score_mae = mean_absolute_error(test, pred_model)
+                        score_rmse = sqrt(mean_squared_error(pred_model, test))
+                        sarimax_prediksi = SARIMAX(ts, order=auto_model.order, seasonal_order=auto_model.seasonal_order, trend='t')
+                        results_SARIMA_t = sarimax_prediksi.fit(disp=-1)
+                        predictions_SARIMA_diff_t = pd.Series(results_SARIMA_t.fittedvalues,copy=True)
+                        st.subheader("Modelling")
+                        di = plt.figure(figsize=(10,5))
+                        plt.plot(ts)             
+                        plt.plot(predictions_SARIMA_diff_t, color='red')               #fitting dengan data
+                        st.pyplot(di)
 
-                    st.write(auto_model.summary())
+                        st.write(auto_model.summary())
 
                     # HASIL PREDIKSI
                     st.subheader("Hasil Prediksi")
@@ -223,11 +225,13 @@ def main():
                     st_lottie(lottie_coding, height=500, key="coding") 
                     
             with st.container():
-                st.markdown("<h1 style='text-align: center;'><strong>About</strong></h1>", unsafe_allow_html=True)
+                st.markdown("<h1 style='text-align: center;'><strong>APES</strong></h1>", unsafe_allow_html=True)
                 st.markdown(
                     """
-                    <div class="text-center">
-                        <h6>Artificial Predictive Energy Supply (APES) adalah solusi berbasis AI digital yang dapat digunakan oleh perusahaan pembangkit listrik untuk mengantisipasi hasil produksi secara tepat berdasarkan unit waktu.Produk ini memiliki alat visualisasi data yang memudahkan pengolahan data bagi konsumen. Selanjutnya, produk mengungkapkan akurasi proses prediksi, dan data prediksi yang ditampilkan oleh produk dapat dengan mudah diunduh oleh pengguna untuk administrasi lebih lanjut.</h6>
+                    <div class="container">
+                        <div class="text-center">
+                            <h5>Artificial Predictive Energy Supply (APES) adalah solusi berbasis AI digital yang dapat digunakan oleh perusahaan pembangkit listrik untuk mengantisipasi hasil produksi secara tepat berdasarkan unit waktu.Produk ini memiliki alat visualisasi data yang memudahkan pengolahan data bagi konsumen. Selanjutnya, produk mengungkapkan akurasi proses prediksi, dan data prediksi yang ditampilkan oleh produk dapat dengan mudah diunduh oleh pengguna untuk administrasi lebih lanjut.</h5>
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
                 st.header('##')
